@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyView · live weather & forecasts</title>
+    <title>SkyView · live weather & stable graphs</title>
     <!-- Google Font & Font Awesome 6 -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -282,6 +282,10 @@
             max-height: 200px !important;
             width: 100% !important;
         }
+        /* space between graphs */
+        .graph-spacer {
+            margin-bottom: 48px;
+        }
         .profile-detail-box {
             background: linear-gradient(145deg, #ffd966, #ffb347);
             border-radius: 48px;
@@ -417,7 +421,6 @@
             <div class="site-title">
                 <span class="cloud-logo"></span> SkyView
             </div>
-            <!-- date badge is now moved inside auth-section via JS, but we keep a fallback -->
         </div>
         <!-- India weather (real-time) -->
         <div class="weather-grid">
@@ -457,14 +460,14 @@
         </div>
     </div>
 
-    <!-- GRAPH SECTION (historical mock) -->
+    <!-- GRAPH SECTION (with spacing) -->
     <div id="graph-section" class="section">
         <h2 style="font-size: 2rem;"><i class="fas fa-chart-scatter"></i> India · monthly temperature (recent)</h2>
-        <div class="glass-panel small-chart-container">
+        <div class="glass-panel small-chart-container graph-spacer">
             <canvas id="indiaMonthChart"></canvas>
         </div>
         <div class="glass-panel">
-            <h3><i class="fas fa-search-location"></i> Search city for graph (historical)</h3>
+            <h3><i class="fas fa-search-location"></i> Search city for historical trend</h3>
             <div class="search-area">
                 <input type="text" id="graphCitySearch" placeholder="Enter city (e.g. Chennai, Paris)">
                 <button class="btn" id="loadGraphBtn" style="background: #0284c7; color: white;">Show graph</button>
@@ -539,6 +542,7 @@
             let currentUser = null;
             let indiaWeatherCache = null;
             let forecastCache = {}; // key: city_date
+            let cityGraphDataCache = {}; // store stable temps per city
 
             // ---------- REAL API CALLS ----------
             async function fetchWeather(city, countryCode = '') {
@@ -557,7 +561,7 @@
                         rain: data.rain ? data.rain['1h'] || data.rain['3h'] || 0 : 0,
                         pressure: data.main.pressure,
                         visibility: data.visibility ? (data.visibility / 1000).toFixed(1) : '—',
-                        uvi: 0, // not in current
+                        uvi: 0,
                         icon: data.weather[0].icon,
                         description: data.weather[0].description,
                         country: data.sys.country
@@ -633,7 +637,7 @@
                 };
             }
 
-            // ---------- INDIA WEATHER (Delhi as reference) ----------
+            // ---------- INDIA WEATHER ----------
             async function loadIndiaWeather() {
                 if (indiaWeatherCache) {
                     updateIndiaUI(indiaWeatherCache);
@@ -657,7 +661,7 @@
                 `;
             }
 
-            // ---------- 7-DAY FORECAST (real) ----------
+            // ---------- 7-DAY FORECAST ----------
             async function loadSevenDayForecast() {
                 try {
                     const url = `https://api.openweathermap.org/data/2.5/forecast?q=New Delhi,IN&units=metric&appid=${OPENWEATHER_API_KEY}`;
@@ -717,7 +721,7 @@
                 document.getElementById('sevenDayForecast').innerHTML = html;
             }
 
-            // ---------- DATE & DAY DISPLAY (placed below sign out) ----------
+            // ---------- DATE & DAY DISPLAY ----------
             function updateDateDisplay() {
                 const now = new Date();
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -799,7 +803,6 @@
                         div.querySelector('.predict-btn').onclick = function() {
                             document.getElementById('nav-calendar').click();
                             document.getElementById('predictionPlace').value = fav;
-                            // set date to today for convenience
                             const today = new Date().toISOString().split('T')[0];
                             document.getElementById('predictionDate').value = today;
                             generatePrediction();
@@ -811,7 +814,7 @@
                 }
             }
 
-            // ---------- MODAL (SIGN IN / SIGN UP / EDIT) – FULL CODE ----------
+            // ---------- MODAL (SIGN IN / SIGN UP / EDIT) – NO "e.g." PLACEHOLDERS ----------
             const modal = document.getElementById('authModal');
             const modalBody = document.getElementById('modalBody');
             const modalTitle = document.getElementById('modalTitle');
@@ -824,8 +827,8 @@
                     modalTitle.innerText = 'Sign in';
                     modalBody.innerHTML = `
                         <div class="modal-field">
-                            <label>Username or email</label>
-                            <input type="text" id="loginUsername" placeholder="your username">
+                            <label>Username</label>
+                            <input type="text" id="loginUsername" placeholder="Username">
                         </div>
                         <div class="modal-field">
                             <label>Password</label>
@@ -853,7 +856,7 @@
                     modalBody.innerHTML = `
                         <div class="modal-field">
                             <label>Username *</label>
-                            <input type="text" id="suUsername" placeholder="choose username">
+                            <input type="text" id="suUsername" placeholder="Username">
                         </div>
                         <div class="modal-field">
                             <label>Password *</label>
@@ -861,17 +864,17 @@
                         </div>
                         <div class="modal-field">
                             <label>Your name</label>
-                            <input type="text" id="suName" placeholder="e.g. Priya">
+                            <input type="text" id="suName" placeholder="Your name">
                         </div>
                         <div class="modal-field">
                             <label>Your place</label>
-                            <input type="text" id="suPlace" placeholder="e.g. Chennai">
+                            <input type="text" id="suPlace" placeholder="Your city">
                         </div>
                         <div class="modal-field">
                             <label>Favourite places</label>
                             <div id="favTagsContainerSU"></div>
                             <div style="display: flex; gap: 10px; margin-top: 12px;">
-                                <input type="text" id="newFavSU" placeholder="city name" style="flex:1;">
+                                <input type="text" id="newFavSU" placeholder="City name" style="flex:1;">
                                 <button class="btn" id="addFavSUBtn" style="background: #0284c7; color: white;"><i class="fas fa-plus"></i> Add</button>
                             </div>
                         </div>
@@ -927,7 +930,7 @@
                             <label>Favourite places</label>
                             <div id="favTagsContainerEdit"></div>
                             <div style="display: flex; gap: 10px; margin-top: 12px;">
-                                <input type="text" id="newFavEdit" placeholder="city name" style="flex:1;">
+                                <input type="text" id="newFavEdit" placeholder="City name" style="flex:1;">
                                 <button class="btn" id="addFavEditBtn" style="background: #0284c7; color: white;"><i class="fas fa-plus"></i> Add</button>
                             </div>
                         </div>
@@ -962,7 +965,7 @@
                 modal.style.display = 'flex';
             }
 
-            // ---------- SEARCH WORLD CITY (real) ----------
+            // ---------- SEARCH WORLD CITY ----------
             async function searchWorldCity() {
                 let city = document.getElementById('globalCityInput').value.trim();
                 if (!city) {
@@ -1009,7 +1012,7 @@
                 document.getElementById('futurePredictions').innerHTML = futureHtml;
             }
 
-            // ---------- GRAPH (mock historical) ----------
+            // ---------- GRAPH (stable per city) ----------
             const pastTempsIndia = [31,32,33,34,35,34,33,32,31,30,31,32,33,34,33,32,31,30,29,30,31,32,33,34,35,34,33,32,31,30];
             let indiaChart, cityChart;
             function initCharts() {
@@ -1035,11 +1038,24 @@
                     scales: { y: { beginAtZero: false, min: 20 } } }
                 });
             }
+
+            // Generate stable temperature data based on city name (always same for same city)
+            function getStableCityTemps(city) {
+                if (cityGraphDataCache[city]) return cityGraphDataCache[city];
+                // create a deterministic offset using sum of char codes
+                const hash = city.split('').reduce((a,b) => a + b.charCodeAt(0), 0);
+                const offset = (hash % 10) - 2; // range -2 to +7
+                const temps = pastTempsIndia.map(t => Math.min(45, Math.max(15, t + offset)));
+                cityGraphDataCache[city] = temps;
+                return temps;
+            }
+
             function loadCityGraph() {
-                let city = document.getElementById('graphCitySearch').value.trim() || 'selected city';
-                document.getElementById('cityGraphLabel').innerHTML = `<i class="fas fa-chart-line"></i> ${city} · this month (mock)`;
-                let newData = pastTempsIndia.map(t => t + Math.floor(Math.random()*6 - 2));
-                cityChart.data.datasets[0].data = newData;
+                let city = document.getElementById('graphCitySearch').value.trim();
+                if (!city) city = 'selected city';
+                document.getElementById('cityGraphLabel').innerHTML = `<i class="fas fa-chart-line"></i> ${city} · this month (historical)`;
+                const stableTemps = getStableCityTemps(city);
+                cityChart.data.datasets[0].data = stableTemps;
                 cityChart.update();
             }
 
@@ -1065,7 +1081,7 @@
                 initCharts();
                 await loadIndiaWeather();
                 await loadSevenDayForecast();
-                renderAuthSection();   // includes date badge
+                renderAuthSection();
                 renderProfile();
                 let today = new Date().toISOString().split('T')[0];
                 document.getElementById('predictionDate').value = today;
